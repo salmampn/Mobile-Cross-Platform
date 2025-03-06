@@ -1,51 +1,51 @@
 import React from "react";
-// import { StatusBar } from "expo-status-bar";
-import { ScrollView, StyleSheet, Text, View, Image } from "react-native";
+import { ScrollView, View } from "react-native";
+import {
+	Avatar,
+	Card,
+	Text,
+	Provider as PaperProvider,
+	Divider,
+} from "react-native-paper";
 import userData from "./data.json";
 import styles from "./Style";
-// import Header from "./components/Header";
-// import CustomCard from "./components/CustomCard";
-// import UseRef from "./components/UseRef";
 
 export default function App() {
 	const users = userData.users;
+
 	return (
-		// <View style={styles.container}>
-		// 	<Text>Open up App.js to start working on your app!</Text>
-		// 	<StatusBar style='auto' />
-		// 	<Header />
-		// 	<CustomCard
-		// 		backgroundColor={"lightblue"}
-		// 		title='Card 1'
-		// 		content='This is the content of Card 1. Customize as needed. You can go further on'
-		// 	/>
-		// 	<CustomCard
-		// 		backgroundColor={"lightgreen"}
-		// 		title='Card 2'
-		// 		content='This is the content of Card 2. Customize as needed. You can go further on'
-		// 	/>
-		// 	<UseRef />
-		// </View>
-		<ScrollView style={{ marginTop: 30 }}>
-			{users.map((user) => {
-				return (
-					<View
-						style={styles.container}
+		<PaperProvider>
+			<ScrollView contentContainerStyle={styles.container}>
+				{users.map((user) => (
+					<Card
 						key={user.name}
+						style={styles.card}
 					>
-						<View style={styles.card}>
-							<Image
+						<View style={styles.cardContent}>
+							<Avatar.Image
+								size={100}
 								source={{ uri: user.photo_url }}
 								style={styles.avatar}
 							/>
-							<View style={styles.boldText}>
-								<Text style={styles.boldText}>{user.name}</Text>
-								<Text>{user.email}</Text>
+							<View style={styles.textContainer}>
+								<Text
+									variant='titleMedium'
+									style={styles.name}
+								>
+									{user.name}
+								</Text>
+								<Divider style={styles.divider} />
+								<Text
+									variant='bodyMedium'
+									style={styles.email}
+								>
+									{user.email}
+								</Text>
 							</View>
 						</View>
-					</View>
-				);
-			})}
-		</ScrollView>
+					</Card>
+				))}
+			</ScrollView>
+		</PaperProvider>
 	);
 }
