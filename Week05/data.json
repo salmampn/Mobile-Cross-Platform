@@ -1,0 +1,49 @@
+{
+    "users": [
+        {
+            "name": "Kim Minji",
+            "email": "minji@njz.com",
+            "photo_url": "https://www.wowkeren.com/display/images/photo/2024/05/17/00509274.webp"
+        },
+                {
+            "name": "Pham Hanni",
+            "email": "hanni@njz.com",
+            "photo_url": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT7oEMUNoid6b9AsudSKhazGuYfEHu7C6rNYQ&s"
+        },
+                {
+            "name": "Danielle Marsh",
+            "email": "danielle@njz.com",
+            "photo_url": "https://www.wowkeren.com/display/images/photo/2024/05/20/00509407.webp"
+        },
+                {
+            "name": "Kang Haerin",
+            "email": "haerin@njz.com",
+            "photo_url": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQrh4duUj_OVytuu2r1n8KIv2_0qNahrFXXdw&s"
+        },
+                {
+            "name": "Lee Hyein",
+            "email": "hyein@njz.com",
+            "photo_url": "https://media.suara.com/pictures/653x366/2024/06/20/68923-hyein-newjeans.jpg"
+        },
+        {
+            "name": "Huh Yunjin",
+            "email": "yunjin@lsf.com",
+            "photo_url": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSlX4DgUMnZ4wYadVGxWsGR0BswCdLl4VxM0A&s"
+        },
+        {
+            "name": "Karina",
+            "email": "karina@aespa.com",
+            "photo_url": "https://static.promediateknologi.id/crop/0x0:0x0/750x500/webp/photo/p1/294/2024/10/06/Karina-aespa-Klink-1153984836.jpg"
+        },
+        {
+            "name": "Ryu Sarang",
+            "email": "sarang@izna.com",
+            "photo_url": "https://img.kpopjuice.com/member/7e0ec4cf4b443aaba1efb42e494b5425_l.jpg"
+        },
+        {
+            "name": "Bang Jeemin",
+            "email": "jeemin@izna.com",
+            "photo_url": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTpEYJNx6gJYmkDFbI-Mxz9OSMX5GLid-DYIQ&s"
+        }
+    ]
+}
