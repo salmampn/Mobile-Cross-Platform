@@ -5,22 +5,32 @@ import { Input } from "./components/Input";
 import { NumberInput } from "./components/Input";
 
 export default function App() {
-	const [name, setName] = useState("");
+	const [name, setName] = useState("...");
+	const [nim, setNim] = useState("...");
 
 	const handleChangeMyName = (value) => {
 		setName(value);
 	};
 
+	const handleChangeMyNim = (value) => {
+		setNim(value);
+	};
+
 	return (
 		<View style={styles.container}>
-			<Text>Salma Manda Putri Nabilah - 00000077712</Text>
+			<View style={{ flexDirection: "row", gap: 10 }}>
+				<Text>{name}</Text>
+				<Text> - </Text>
+				<Text>{nim}</Text>
+			</View>
+
 			<Input
 				name={name}
 				onChangeText={handleChangeMyName}
 			/>
 			<NumberInput
-				name={name}
-				onChangeText={handleChangeMyName}
+				name={nim}
+				onChangeText={handleChangeMyNim}
 			/>
 		</View>
 	);

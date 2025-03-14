@@ -3,7 +3,7 @@ import { Text, View, TextInput } from "react-native";
 const Input = ({ name, onChangeText }) => {
 	console.log(name);
 	return (
-		<View>
+		<View style={{ width: "95%", marginBottom: 10 }}>
 			<Text>Name</Text>
 			<TextInput
 				placeholder='Input your name'
@@ -22,7 +22,7 @@ const Input = ({ name, onChangeText }) => {
 const NumberInput = ({ nim, onChangeText }) => {
 	console.log(nim);
 	return (
-		<View>
+		<View style={{ width: "95%" }}>
 			<Text>NIM</Text>
 			<TextInput
 				placeholder='Input your NIM'
