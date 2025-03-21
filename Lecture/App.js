@@ -6,6 +6,7 @@ import Meet5_Profile from "./components/Meet5_Profile";
 import Meet6_latih1 from "./components/Meet6_latih1";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createDrawerNavigator } from "@react-navigation/drawer";
+import Meet7_lat1 from "./components/Meet7_lat1";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -27,6 +28,10 @@ export default function App() {
 					<Drawer.Screen
 						name='Meet 6'
 						component={Meet6_latih1}
+					/>
+					<Drawer.Screen
+						name='Meet 7'
+						component={Meet7_lat1}
 					/>
 				</Drawer.Navigator>
 			</NavigationContainer>
