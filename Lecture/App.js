@@ -9,6 +9,7 @@ import Meet6_latih1 from "./components/Meet6_latih1";
 import Meet7_lat1 from "./components/Meet7_lat1";
 import Meet8 from "./components/Meet8";
 import Meet8_axios from "./components/Meet8_axios";
+import Meet9 from "./components/Meet9";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -42,6 +43,10 @@ export default function App() {
 					<Drawer.Screen
 						name='Meet 8 Axios'
 						component={Meet8_axios}
+					/>
+					<Drawer.Screen
+						name='Meet 9'
+						component={Meet9}
 					/>
 				</Drawer.Navigator>
 			</NavigationContainer>
