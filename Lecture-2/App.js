@@ -1,32 +1,23 @@
-import { StatusBar } from "expo-status-bar";
-import { StyleSheet, Text, View } from "react-native";
-import Maps from "./components/Maps";
+import * as React from "react";
+import { NavigationContainer } from "@react-navigation/native";
+import { createDrawerNavigator } from "@react-navigation/drawer";
+import Week10 from "./components/Week10";
+
+const Drawer = createDrawerNavigator();
 
 export default function App() {
-	return (
-		<View style={styles.container}>
-			<StatusBar style='auto' />
-			<Text style={styles.title}>Welcome to the app!</Text>
-			<View style={styles.mapContainer}>
-				<Maps />
-			</View>
-		</View>
-	);
-}
+	const DrawerNavigation = () => {
+		return (
+			<NavigationContainer>
+				<Drawer.Navigator>
+					<Drawer.Screen
+						name='Meet 10'
+						component={Week10}
+					/>
+				</Drawer.Navigator>
+			</NavigationContainer>
+		);
+	};
 
-const styles = StyleSheet.create({
-	container: {
-		flex: 1,
-		backgroundColor: "#fff",
-		alignItems: "center",
-		justifyContent: "center",
-	},
-	title: {
-		fontSize: 18,
-		marginBottom: 20,
-	},
-	mapContainer: {
-		width: "70%",
-		height: "50%",
-	},
-});
+	return <DrawerNavigation />;
+}
