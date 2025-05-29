@@ -16,12 +16,12 @@ import * as Location from "expo-location";
 import * as FileSystem from "expo-file-system";
 import * as Sharing from "expo-sharing";
 import { supabase } from "./utils/supabase";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // Components
 import Header from "./components/Header";
 import Camera from "./components/Camera";
 import ActionButton from "./components/ActionButton";
-import Geolocation from "./components/Geolocation";
 import LocationDisplay from "./components/LocationDisplay";
 import PhotoCard from "./components/PhotoCard";
 
@@ -35,12 +35,16 @@ export default function App() {
 	const [loading, setLoading] = useState(false);
 	const [photosLoading, setPhotosLoading] = useState(false);
 	const [photos, setPhotos] = useState([]);
-
+	const [successfulUploads, setSuccessfulUploads] = useState(0);
+	const [failedUploads, setFailedUploads] = useState(0);
 	useEffect(() => {
 		(async () => {
 			const { status } = await MediaLibrary.requestPermissionsAsync();
 			setHasMediaPermission(status === "granted");
 			fetchPhotos();
+
+			// Load upload metrics from persistent storage
+			await loadUploadMetrics();
 
 			// Request location permission at startup
 			const { status: locationStatus } =
@@ -50,6 +54,11 @@ export default function App() {
 			}
 		})();
 	}, []);
+
+	// Save metrics whenever they change
+	useEffect(() => {
+		saveUploadMetrics();
+	}, [successfulUploads, failedUploads]);
 	const fetchPhotos = async () => {
 		try {
 			setPhotosLoading(true);
@@ -70,14 +79,18 @@ export default function App() {
 			setPhotosLoading(false);
 		}
 	};
-
-	const handlePhotoTaken = async (photoUrl, location) => {
+	const handlePhotoTaken = async (photoUrl, location, uploadSuccess) => {
 		setShowCamera(false);
 		fetchPhotos();
 		if (location) {
 			setLatitude(location.coords.latitude.toString());
 			setLongitude(location.coords.longitude.toString());
 			setFullLocationData(location);
+		}
+
+		// Update upload counts based on success/failure
+		if (uploadSuccess !== undefined) {
+			updateUploadCounts(uploadSuccess);
 		}
 	};
 
@@ -205,6 +218,82 @@ export default function App() {
 		}
 	};
 
+	// Save upload metrics to AsyncStorage
+	const saveUploadMetrics = async () => {
+		try {
+			const metrics = {
+				successful: successfulUploads,
+				failed: failedUploads,
+				lastUpdated: new Date().toISOString(),
+			};
+			await AsyncStorage.setItem("uploadMetrics", JSON.stringify(metrics));
+		} catch (error) {
+			console.error("Error saving upload metrics:", error);
+		}
+	};
+
+	// Load upload metrics from AsyncStorage
+	const loadUploadMetrics = async () => {
+		try {
+			const metricsJson = await AsyncStorage.getItem("uploadMetrics");
+			if (metricsJson) {
+				const metrics = JSON.parse(metricsJson);
+				setSuccessfulUploads(metrics.successful || 0);
+				setFailedUploads(metrics.failed || 0);
+			}
+		} catch (error) {
+			console.error("Error loading upload metrics:", error);
+		}
+	};
+
+	// Update upload counts
+	const updateUploadCounts = async (isSuccess) => {
+		if (isSuccess) {
+			setSuccessfulUploads((prevCount) => prevCount + 1);
+		} else {
+			setFailedUploads((prevCount) => prevCount + 1);
+		}
+	};
+	// Reset upload metrics
+	const resetUploadMetrics = async () => {
+		try {
+			setSuccessfulUploads(0);
+			setFailedUploads(0);
+			await AsyncStorage.removeItem("uploadMetrics");
+
+			// Show confirmation
+			if (Platform.OS === "android") {
+				ToastAndroid.show("Upload metrics have been reset", ToastAndroid.SHORT);
+			} else {
+				Alert.alert(
+					"Reset Complete",
+					"Upload metrics have been reset to zero."
+				);
+			}
+
+			// Also notify other components that might be using these metrics
+			// For example, if the Camera component is open and displaying metrics
+			if (showCamera) {
+				// We'll handle this on the next mount of Camera component
+			}
+		} catch (error) {
+			console.error("Error resetting upload metrics:", error);
+
+			// Show error notification
+			if (Platform.OS === "android") {
+				ToastAndroid.show(
+					`Failed to reset metrics: ${error.message}`,
+					ToastAndroid.LONG
+				);
+			} else {
+				Alert.alert(
+					"Error",
+					`Failed to reset upload metrics: ${error.message}`
+				);
+			}
+		}
+	};
+
 	if (showCamera) {
 		return (
 			<Camera
@@ -274,6 +363,37 @@ export default function App() {
 							<Text>No location data available</Text>
 						))}
 				</View>
+
+				{/* Upload Statistics Dashboard */}
+				<View style={styles.statisticsContainer}>
+					<View style={styles.sectionHeader}>
+						<Text style={styles.sectionTitle}>Upload Statistics</Text>
+						<ActionButton
+							title='Reset'
+							onPress={resetUploadMetrics}
+							iconName='refresh'
+							backgroundColor='#e74c3c'
+							buttonStyle={styles.resetButton}
+						/>
+					</View>
+					<View style={styles.statsRow}>
+						<View style={[styles.statCard, styles.successCard]}>
+							<Text style={styles.statNumber}>{successfulUploads}</Text>
+							<Text style={styles.statLabel}>Successful</Text>
+						</View>
+						<View style={[styles.statCard, styles.failedCard]}>
+							<Text style={styles.statNumber}>{failedUploads}</Text>
+							<Text style={styles.statLabel}>Failed</Text>
+						</View>
+						<View style={[styles.statCard, styles.totalCard]}>
+							<Text style={styles.statNumber}>
+								{successfulUploads + failedUploads}
+							</Text>
+							<Text style={styles.statLabel}>Total</Text>
+						</View>
+					</View>
+				</View>
+
 				{/* Photos display section */}
 				<ScrollView
 					style={styles.photosContainer}
@@ -376,5 +496,102 @@ const styles = StyleSheet.create({
 	refreshButton: {
 		minWidth: 80,
 		height: 36,
+	},
+	resetButton: {
+		minWidth: 80,
+		height: 36,
+	},
+	statisticsContainer: {
+		backgroundColor: "#fff",
+		marginHorizontal: 15,
+		marginBottom: 15,
+		padding: 15,
+		borderRadius: 10,
+		shadowColor: "#000",
+		shadowOffset: { width: 0, height: 2 },
+		shadowOpacity: 0.1,
+		shadowRadius: 4,
+		elevation: 3,
+	},
+	statsRow: {
+		flexDirection: "row",
+		justifyContent: "space-between",
+	},
+	statCard: {
+		flex: 1,
+		alignItems: "center",
+		paddingVertical: 15,
+		borderRadius: 8,
+		marginHorizontal: 4,
+	},
+	successCard: {
+		backgroundColor: "rgba(46, 204, 113, 0.2)",
+		borderWidth: 1,
+		borderColor: "#2ecc71",
+	},
+	failedCard: {
+		backgroundColor: "rgba(231, 76, 60, 0.2)",
+		borderWidth: 1,
+		borderColor: "#e74c3c",
+	},
+	totalCard: {
+		backgroundColor: "rgba(52, 152, 219, 0.2)",
+		borderWidth: 1,
+		borderColor: "#3498db",
+	},
+	statNumber: {
+		fontSize: 24,
+		fontWeight: "bold",
+		marginBottom: 5,
+	},
+	statLabel: {
+		fontSize: 12,
+		color: "#7f8c8d",
+	},
+	statisticsContainer: {
+		padding: 15,
+		backgroundColor: "#fff",
+		borderTopWidth: 1,
+		borderTopColor: "#e0e0e0",
+		marginTop: 10,
+	},
+	statCard: {
+		flex: 1,
+		padding: 10,
+		backgroundColor: "#ecf0f1",
+		borderRadius: 8,
+		margin: 5,
+		alignItems: "center",
+	},
+	successCard: {
+		backgroundColor: "#2ecc71",
+	},
+	failedCard: {
+		backgroundColor: "#e74c3c",
+	},
+	totalCard: {
+		backgroundColor: "#3498db",
+	},
+	statsRow: {
+		flexDirection: "row",
+		justifyContent: "space-between",
+	},
+	statsTitle: {
+		fontSize: 18,
+		fontWeight: "bold",
+		color: "#2c3e50",
+		marginBottom: 10,
+	},
+	statsLabel: {
+		fontSize: 16,
+		color: "#34495e",
+	},
+	statsValue: {
+		fontSize: 18,
+		fontWeight: "bold",
+		color: "#2ecc71",
+	},
+	resetButton: {
+		marginTop: 10,
 	},
 });

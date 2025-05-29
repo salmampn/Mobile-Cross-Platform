@@ -16,12 +16,14 @@ import * as Location from "expo-location";
 import * as Notifications from "expo-notifications";
 import { supabase } from "../utils/supabase";
 import ActionButton from "./ActionButton";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 interface CameraProps {
 	onBack: () => void;
 	onPhotoTaken: (
 		photoUrl: string,
-		location: Location.LocationObject | null
+		location: Location.LocationObject | null,
+		uploadSuccess?: boolean
 	) => void;
 }
 
@@ -33,7 +35,8 @@ export default function Camera({ onBack, onPhotoTaken }: CameraProps) {
 	const [uploadProgress, setUploadProgress] = useState<string | null>(null);
 	const [notificationPermission, setNotificationPermission] =
 		useState<boolean>(false);
-	// Set up notifications
+	const [successfulUploads, setSuccessfulUploads] = useState<number>(0);
+	const [failedUploads, setFailedUploads] = useState<number>(0); // Set up notifications
 	useEffect(() => {
 		// Configure notification handler
 		Notifications.setNotificationHandler({
@@ -46,10 +49,13 @@ export default function Camera({ onBack, onPhotoTaken }: CameraProps) {
 			}),
 		});
 
-		// Request notification permissions
+		// Request notification permissions and load metrics
 		(async () => {
 			const { status } = await Notifications.requestPermissionsAsync();
 			setNotificationPermission(status === "granted");
+
+			// Load upload metrics
+			await loadUploadMetrics();
 		})();
 	}, []);
 
@@ -67,6 +73,41 @@ export default function Camera({ onBack, onPhotoTaken }: CameraProps) {
 			trigger: null, // Show immediately
 		});
 	}
+	// Load upload metrics
+	const loadUploadMetrics = async () => {
+		try {
+			const metricsJson = await AsyncStorage.getItem("uploadMetrics");
+			if (metricsJson) {
+				const metrics = JSON.parse(metricsJson);
+				setSuccessfulUploads(metrics.successful || 0);
+				setFailedUploads(metrics.failed || 0);
+			} else {
+				// Reset local state if no metrics found in storage
+				setSuccessfulUploads(0);
+				setFailedUploads(0);
+			}
+		} catch (error) {
+			console.error("Error loading upload metrics:", error);
+		}
+	};
+
+	// Periodically sync metrics to ensure we have the latest data
+	useEffect(() => {
+		const intervalId = setInterval(() => {
+			loadUploadMetrics();
+		}, 5000); // Sync every 5 seconds
+
+		return () => clearInterval(intervalId);
+	}, []);
+
+	// Update local counts (the App component will handle persistent storage)
+	const updateUploadCounts = async (isSuccess: boolean) => {
+		if (isSuccess) {
+			setSuccessfulUploads((prev) => prev + 1);
+		} else {
+			setFailedUploads((prev) => prev + 1);
+		}
+	};
 
 	if (!permission) {
 		return (
@@ -212,12 +253,14 @@ export default function Camera({ onBack, onPhotoTaken }: CameraProps) {
 								`Failed to save data to database.\nError: ${dbError.message}`,
 								[{ text: "OK" }]
 							);
-						}
+						} // Update upload counts
+						const newFailCount = failedUploads + 1;
+						updateUploadCounts(false);
 
 						// Also send system notification for error
 						scheduleNotification(
 							"Upload Failed",
-							`Failed to save photo to database: ${dbError.message}`
+							`Failed to save photo to database: ${dbError.message}\n${successfulUploads} successful, ${newFailCount} unsuccessful.`
 						);
 
 						throw new Error(
@@ -242,7 +285,9 @@ export default function Camera({ onBack, onPhotoTaken }: CameraProps) {
 								`Photo saved to database successfully!${locationMessage}`,
 								[{ text: "OK" }]
 							);
-						}
+						} // Update upload counts
+						const newSuccessCount = successfulUploads + 1;
+						updateUploadCounts(true);
 
 						// System notification
 						const notificationLocation =
@@ -252,7 +297,7 @@ export default function Camera({ onBack, onPhotoTaken }: CameraProps) {
 
 						scheduleNotification(
 							"Photo Upload Complete",
-							`Your photo was saved successfully! ${notificationLocation}`
+							`Your photo was saved successfully!\n${newSuccessCount} successful, ${failedUploads} unsuccessful.\n${notificationLocation}`
 						);
 					}
 				} catch (dbException) {
@@ -270,22 +315,23 @@ export default function Camera({ onBack, onPhotoTaken }: CameraProps) {
 							`An error occurred: ${dbException.message}`,
 							[{ text: "OK" }]
 						);
-					}
+					} // Update upload counts
+					const newFailCount = failedUploads + 1;
+					updateUploadCounts(false);
 
 					// System notification
 					scheduleNotification(
 						"Database Error",
-						`There was an error saving your photo: ${dbException.message}`
+						`There was an error saving your photo: ${dbException.message}\n${successfulUploads} successful, ${newFailCount} unsuccessful.`
 					);
 
 					throw dbException;
-				}
-
-				// Call the callback function
+				} // Call the callback function
 				setUploadProgress("Done!");
 				if (onPhotoTaken) {
-					onPhotoTaken(imageUrl, location);
+					onPhotoTaken(imageUrl, location, true); // Pass true to indicate success
 				}
+				// Note: We've already updated the counts earlier in the success block
 			} catch (error) {
 				console.error("Error processing photo:", error);
 
@@ -299,13 +345,19 @@ export default function Camera({ onBack, onPhotoTaken }: CameraProps) {
 					Alert.alert("Error", `Error saving photo: ${error.message}`, [
 						{ text: "OK" },
 					]);
-				}
-
+				} // Update upload metrics
+				const newFailCount = failedUploads + 1;
+				updateUploadCounts(false);
 				// System notification for error
 				scheduleNotification(
 					"Photo Upload Error",
-					`There was a problem with your photo: ${error.message}`
+					`There was a problem with your photo: ${error.message}\n${successfulUploads} successful, ${newFailCount} unsuccessful.`
 				);
+
+				// Call the callback with false to indicate failure
+				if (onPhotoTaken) {
+					onPhotoTaken(null, null, false);
+				}
 			} finally {
 				setUploading(false);
 				setUploadProgress(null);
